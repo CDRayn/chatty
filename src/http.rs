@@ -77,15 +77,15 @@ mod tests
     use std::path::Path;
 
     #[test]
-    /// Verify that the `parse_request()` function correctly parses a valid HTTP GET request
+    /// Verify that the `parse_request()` function correctly parses valid HTTP GET requests
     /// by returning a `Request` struct containing the HTTP request's details.
     fn test_parse_request_get_pos()
     {
         // Test the parsing of a simple GET request containing no HTTP headers.
-        let get_request = "GET / HTTP/1.1\r\n";
+        let mut get_request = "GET / HTTP/1.1\r\n";
 
-        let result = parse_request(get_request).unwrap();
-        let expected_result = HttpRequest {
+        let mut result = parse_request(get_request).unwrap();
+        let mut expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/"),
             http_version: "HTTP/1.1",
@@ -97,13 +97,13 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a simple GET request that contains HTTP headers.
-        let get_request =
+        get_request =
         "GET / HTTP/1.1
         Host: www.example.com
         Connection: keep-alive\r\n";
 
-        let result = parse_request(get_request).unwrap();
-        let expected_result = HttpRequest {
+        result = parse_request(get_request).unwrap();
+        expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/"),
             http_version: "HTTP/1.1",
@@ -115,13 +115,13 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a GET request with a more complex resource path and HTTP headers.
-        let get_request =
+        get_request =
         "GET /some/path/ HTTP/1.1
         Host: www.example.com
         Connection: keep-alive\r\n";
 
-        let result = parse_request(get_request).unwrap();
-        let expected_result = HttpRequest {
+        result = parse_request(get_request).unwrap();
+        expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/some/path"),
             http_version: "HTTP/1.1",
@@ -133,7 +133,7 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a GET request with a larger number of HTTP headers
-        let get_request =
+        get_request =
         "GET /some/path/ HTTP/1.1
         Host: www.example.com
         User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
@@ -142,8 +142,8 @@ mod tests
         Accept-Encoding: gzip, deflate
         Connection: keep-alive\r\n";
 
-        let result = parse_request(get_request).unwrap();
-        let expected_result = HttpRequest {
+        result = parse_request(get_request).unwrap();
+        expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/some/path/"),
             http_version: "HTTP/1.1",
@@ -153,5 +153,16 @@ mod tests
         assert_eq!(result.uri, expected_result.uri);
         assert_eq!(result.http_version, expected_result.http_version);
         assert_eq!(result.body, expected_result.body);
+    }
+
+    #[test]
+    /// Verify that the `parse_request()` function correctly parses invalid HTTP GET requests
+    /// by returning an error.
+    fn test_parse_request_get_neg()
+    {
+        // Test that an error is raised when no path is included
+        let bad_get_request = "GET HTTP/1.1";
+        let result = parse_request(bad_get_request).is_err();
+        assert!(result);
     }
 }
