@@ -507,4 +507,62 @@ mod tests
         result = parse_request(bad_request).is_err();
         assert!(result);
     }
+
+    /// Verify that the `parse_http_request()` function correctly parses a TRACE HTTP request
+    /// by returning a `HttpRequest` struct containing the parsed contents of the request.
+    #[test]
+    fn test_parse_http_request_trace_valid()
+    {
+        // Test the parsing of a simple TRACE request containing no HTTP headers.
+        let mut request = "TRACE / HTTP/1.1\r\n";
+        let mut result = parse_request(request).unwrap();
+        let mut expected_result = HttpRequest {
+            http_method: "TRACE",
+            uri: Path::new("/"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a TRACE request with a non root path.
+        request = "TRACE /some/path HTTP/1.1\r\n";
+        result = parse_request(request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "TRACE",
+            uri: Path::new("/some/path"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a TRACE request with a non root path and HTTP headers.
+        request = "TRACE /some/path HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive\r\n";
+
+        result = parse_request(request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "TRACE",
+            uri: Path::new("/some/path"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+    }
 }
