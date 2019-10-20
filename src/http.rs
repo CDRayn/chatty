@@ -264,7 +264,7 @@ mod tests
     }
     /// Verify that the `parse_http_request()` function returns an error for invalid HTTP HEAD requests.
     #[test]
-    fn parse_http_request_head_invalid()
+    fn test_parse_http_request_head_invalid()
     {
         // Test that an error is raised when no path is included
         let mut bad_head_request = "HEAD HTTP/1.1\r\n";
@@ -278,5 +278,63 @@ mod tests
         bad_head_request = "HEAD /some/path HTTP/1.1Host: www.example.com\r\n";
         result = parse_request(bad_head_request).is_err();
         assert!(result);
+    }
+
+    /// Verify that the `parse_http_request()` function correctly parses a HTTP DELETE request
+    /// by returning a `HttpRequest` struct with the parsed contents of the request.
+    #[test]
+    fn test_parse_http_request_delete_valid()
+    {
+        // Test the parsing of a simple DELETE request containing no HTTP headers.
+        let mut delete_request = "DELETE / HTTP/1.1\r\n";
+        let mut result = parse_request(delete_request).unwrap();
+        let mut expected_result = HttpRequest {
+            http_method: "DELETE",
+            uri: Path::new("/"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a DELETE request with a non root path.
+        delete_request = "DELETE /some/path HTTP/1.1\r\n";
+        result = parse_request(delete_request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "DELETE",
+            uri: Path::new("/some/path"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a DELETE request with a non root path and HTTP headers.
+        delete_request = "DELETE /some/path HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive\r\n";
+
+        result = parse_request(delete_request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "DELETE",
+            uri: Path::new("/some/path"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
     }
 }
