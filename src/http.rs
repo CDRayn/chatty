@@ -565,4 +565,22 @@ mod tests
         assert_eq!(result.http_version, expected_result.http_version);
         assert_eq!(result.body, expected_result.body);
     }
+
+    /// Verify that the `parse_http_request()` function returns an error for invalid TRACE HTTP requests.
+    #[test]
+    fn test_parse_http_request_trace_invalid()
+    {
+        // Test that an error is raised when no path is included
+        let mut bad_request = "TRACE HTTP/1.1\r\n";
+        let mut result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        bad_request = "TRACE / HTTP/2.0\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        bad_request = "TRACE /some/path HTTP/1.1Host: www.example.com\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+    }
 }
