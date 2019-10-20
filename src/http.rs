@@ -74,7 +74,7 @@ pub fn parse_request(request: &str) -> Result<HttpRequest, Box<dyn Error>>
 #[cfg(test)]
 mod tests
 {
-    use crate::http::{parse_request, HttpRequest};
+    use super::*;
     use std::path::Path;
 
     /// Verify that the `parse_request()` function correctly parses valid HTTP GET requests
@@ -83,9 +83,9 @@ mod tests
     fn test_parse_request_get_valid()
     {
         // Test the parsing of a simple GET request containing no HTTP headers.
-        let mut get_request = "GET / HTTP/1.1\r\n";
+        let mut request = "GET / HTTP/1.1\r\n";
 
-        let mut result = parse_request(get_request).unwrap();
+        let mut result = parse_request(request).unwrap();
         let mut expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/"),
@@ -98,12 +98,12 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a simple GET request that contains HTTP headers.
-        get_request =
+        request =
         "GET / HTTP/1.1
         Host: www.example.com
         Connection: keep-alive\r\n";
 
-        result = parse_request(get_request).unwrap();
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/"),
@@ -116,12 +116,12 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a GET request with a more complex resource path and HTTP headers.
-        get_request =
+        request =
         "GET /some/path/ HTTP/1.1
         Host: www.example.com
         Connection: keep-alive\r\n";
 
-        result = parse_request(get_request).unwrap();
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/some/path"),
@@ -134,7 +134,7 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a GET request with a larger number of HTTP headers
-        get_request =
+        request =
         "GET /some/path/ HTTP/1.1
         Host: www.example.com
         User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
@@ -143,7 +143,7 @@ mod tests
         Accept-Encoding: gzip, deflate
         Connection: keep-alive\r\n";
 
-        result = parse_request(get_request).unwrap();
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "GET",
             uri: Path::new("/some/path/"),
@@ -162,24 +162,24 @@ mod tests
     fn test_parse_request_get_invalid()
     {
         // Test that an error is raised when no path is included
-        let mut bad_get_request = "GET HTTP/1.1\r\n";
-        let mut result = parse_request(bad_get_request).is_err();
+        let mut bad_request = "GET HTTP/1.1\r\n";
+        let mut result = parse_request(bad_request).is_err();
         assert!(result);
 
         // Test that an error is raised for unsupported HTTP versions
-        bad_get_request = "GET /some/path HTTP/2.0\r\n";
-        result = parse_request(bad_get_request).is_err();
+        bad_request = "GET /some/path HTTP/2.0\r\n";
+        result = parse_request(bad_request).is_err();
         assert!(result);
 
         // Test that an error is raised when space characters are absent
-        bad_get_request = "GET /some/pathHTTP/1.1\r\n";
-        result = parse_request(bad_get_request).is_err();
+        bad_request = "GET /some/pathHTTP/1.1\r\n";
+        result = parse_request(bad_request).is_err();
         assert!(result);
 
         // Test that an error is raised when a newline is missing between the request line
         // and headers.
-        bad_get_request = "GET /some/path HTTP/1.1Host: www.example.com\r\n";
-        result = parse_request(bad_get_request).is_err();
+        bad_request = "GET /some/path HTTP/1.1Host: www.example.com\r\n";
+        result = parse_request(bad_request).is_err();
         assert!(result);
     }
 
@@ -189,8 +189,8 @@ mod tests
     fn test_parse_request_head_valid()
     {
         // Test the parsing of a simple HEAD request containing no HTTP headers.
-        let mut head_request = "HEAD / HTTP/1.1\r\n";
-        let mut result = parse_request(head_request).unwrap();
+        let mut request = "HEAD / HTTP/1.1\r\n";
+        let mut result = parse_request(request).unwrap();
         let mut expected_result = HttpRequest {
             http_method: "HEAD",
             uri: Path::new("/"),
@@ -204,8 +204,8 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a simple HEAD request with a more elaborate path.
-        head_request = "HEAD /some/path HTTP/1.1\r\n";
-        result = parse_request(head_request).unwrap();
+        request = "HEAD /some/path HTTP/1.1\r\n";
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "HEAD",
             uri: Path::new("/some/path"),
@@ -219,7 +219,7 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a simple HEAD request with HTTP headers.
-        head_request = "HEAD / HTTP/1.1
+        request = "HEAD / HTTP/1.1
         Host: www.example.com
         User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
         Accept: application/json
@@ -227,7 +227,7 @@ mod tests
         Accept-Encoding: gzip, deflate
         Connection: keep-alive\r\n";
 
-        result = parse_request(head_request).unwrap();
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "HEAD",
             uri: Path::new("/"),
@@ -241,7 +241,7 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a simple HEAD request with HTTP headers and a non root path.
-        head_request = "HEAD /some/path HTTP/1.1
+        request = "HEAD /some/path HTTP/1.1
         Host: www.example.com
         User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
         Accept: application/json
@@ -249,7 +249,7 @@ mod tests
         Accept-Encoding: gzip, deflate
         Connection: keep-alive\r\n";
 
-        result = parse_request(head_request).unwrap();
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "HEAD",
             uri: Path::new("/some/path"),
@@ -267,16 +267,16 @@ mod tests
     fn test_parse_http_request_head_invalid()
     {
         // Test that an error is raised when no path is included
-        let mut bad_head_request = "HEAD HTTP/1.1\r\n";
-        let mut result = parse_request(bad_head_request).is_err();
+        let mut bad_request = "HEAD HTTP/1.1\r\n";
+        let mut result = parse_request(bad_request).is_err();
         assert!(result);
 
-        bad_head_request = "HEAD / HTTP/2.0\r\n";
-        result = parse_request(bad_head_request).is_err();
+        bad_request = "HEAD / HTTP/2.0\r\n";
+        result = parse_request(bad_request).is_err();
         assert!(result);
 
-        bad_head_request = "HEAD /some/path HTTP/1.1Host: www.example.com\r\n";
-        result = parse_request(bad_head_request).is_err();
+        bad_request = "HEAD /some/path HTTP/1.1Host: www.example.com\r\n";
+        result = parse_request(bad_request).is_err();
         assert!(result);
     }
 
@@ -286,8 +286,8 @@ mod tests
     fn test_parse_http_request_delete_valid()
     {
         // Test the parsing of a simple DELETE request containing no HTTP headers.
-        let mut delete_request = "DELETE / HTTP/1.1\r\n";
-        let mut result = parse_request(delete_request).unwrap();
+        let mut request = "DELETE / HTTP/1.1\r\n";
+        let mut result = parse_request(request).unwrap();
         let mut expected_result = HttpRequest {
             http_method: "DELETE",
             uri: Path::new("/"),
@@ -301,8 +301,8 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a DELETE request with a non root path.
-        delete_request = "DELETE /some/path HTTP/1.1\r\n";
-        result = parse_request(delete_request).unwrap();
+        request = "DELETE /some/path HTTP/1.1\r\n";
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "DELETE",
             uri: Path::new("/some/path"),
@@ -316,7 +316,7 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a DELETE request with a non root path and HTTP headers.
-        delete_request = "DELETE /some/path HTTP/1.1
+        request = "DELETE /some/path HTTP/1.1
         Host: www.example.com
         User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
         Accept: application/json
@@ -324,7 +324,7 @@ mod tests
         Accept-Encoding: gzip, deflate
         Connection: keep-alive\r\n";
 
-        result = parse_request(delete_request).unwrap();
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "DELETE",
             uri: Path::new("/some/path"),
@@ -343,16 +343,16 @@ mod tests
     fn test_parse_http_request_delete_invalid()
     {
         // Test that an error is raised when no path is included
-        let mut bad_head_request = "DELETE HTTP/1.1\r\n";
-        let mut result = parse_request(bad_head_request).is_err();
+        let mut bad_request = "DELETE HTTP/1.1\r\n";
+        let mut result = parse_request(bad_request).is_err();
         assert!(result);
 
-        bad_head_request = "DELETE / HTTP/2.0\r\n";
-        result = parse_request(bad_head_request).is_err();
+        bad_request = "DELETE / HTTP/2.0\r\n";
+        result = parse_request(bad_request).is_err();
         assert!(result);
 
-        bad_head_request = "DELETE /some/path HTTP/1.1Host: www.example.com\r\n";
-        result = parse_request(bad_head_request).is_err();
+        bad_request = "DELETE /some/path HTTP/1.1Host: www.example.com\r\n";
+        result = parse_request(bad_request).is_err();
         assert!(result);
     }
 
@@ -362,8 +362,8 @@ mod tests
     fn test_parse_http_request_connect_valid()
     {
         // Test the parsing of a simple CONNECT request containing no HTTP headers.
-        let mut connect_request = "CONNECT / HTTP/1.1\r\n";
-        let mut result = parse_request(connect_request).unwrap();
+        let mut request = "CONNECT / HTTP/1.1\r\n";
+        let mut result = parse_request(request).unwrap();
         let mut expected_result = HttpRequest {
             http_method: "CONNECT",
             uri: Path::new("/"),
@@ -377,8 +377,8 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a CONNECT request with a non root path.
-        connect_request = "CONNECT /some/path HTTP/1.1\r\n";
-        result = parse_request(connect_request).unwrap();
+        request = "CONNECT /some/path HTTP/1.1\r\n";
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "CONNECT",
             uri: Path::new("/some/path"),
@@ -392,7 +392,7 @@ mod tests
         assert_eq!(result.body, expected_result.body);
 
         // Test the parsing of a CONNECT request with a non root path and HTTP headers.
-        connect_request = "CONNECT /some/path HTTP/1.1
+        request = "CONNECT /some/path HTTP/1.1
         Host: www.example.com
         User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
         Accept: application/json
@@ -400,7 +400,7 @@ mod tests
         Accept-Encoding: gzip, deflate
         Connection: keep-alive\r\n";
 
-        result = parse_request(connect_request).unwrap();
+        result = parse_request(request).unwrap();
         expected_result = HttpRequest {
             http_method: "CONNECT",
             uri: Path::new("/some/path"),
@@ -412,5 +412,23 @@ mod tests
         assert_eq!(result.uri, expected_result.uri);
         assert_eq!(result.http_version, expected_result.http_version);
         assert_eq!(result.body, expected_result.body);
+    }
+
+    /// Verify that the `parse_http_request()` function returns a error for any invalid CONNECT HTTP requests.
+    #[test]
+    fn test_parse_http_request_connect_invalid()
+    {
+        // Test that an error is raised when no path is included
+        let mut bad_request = "CONNECT HTTP/1.1\r\n";
+        let mut result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        bad_request = "CONNECT / HTTP/2.0\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        bad_request = "CONNECT /some/path HTTP/1.1Host: www.example.com\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
     }
 }
