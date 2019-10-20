@@ -205,8 +205,8 @@ mod tests
 
         // Test the parsing of a simple HEAD request with a more elaborate path.
         head_request = "HEAD /some/path HTTP/1.1\r\n";
-        let result = parse_request(head_request).unwrap();
-        let expected_result = HttpRequest {
+        result = parse_request(head_request).unwrap();
+        expected_result = HttpRequest {
             http_method: "HEAD",
             uri: Path::new("/some/path"),
             http_version: "HTTP/1.1",
@@ -217,5 +217,66 @@ mod tests
         assert_eq!(result.uri, expected_result.uri);
         assert_eq!(result.http_version, expected_result.http_version);
         assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a simple HEAD request with HTTP headers.
+        head_request = "HEAD / HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive\r\n";
+
+        result = parse_request(head_request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "HEAD",
+            uri: Path::new("/"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a simple HEAD request with HTTP headers and a non root path.
+        head_request = "HEAD /some/path HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive\r\n";
+
+        result = parse_request(head_request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "HEAD",
+            uri: Path::new("/some/path"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+    }
+    /// Verify that the `parse_http_request()` function returns an error for invalid HTTP HEAD requests.
+    #[test]
+    fn parse_http_request_head_invalid()
+    {
+        // Test that an error is raised when no path is included
+        let mut bad_head_request = "HEAD HTTP/1.1\r\n";
+        let mut result = parse_request(bad_head_request).is_err();
+        assert!(result);
+
+        bad_head_request = "HEAD / HTTP/2.0\r\n";
+        result = parse_request(bad_head_request).is_err();
+        assert!(result);
+
+        bad_head_request = "HEAD /some/path HTTP/1.1Host: www.example.com\r\n";
+        result = parse_request(bad_head_request).is_err();
+        assert!(result);
     }
 }
