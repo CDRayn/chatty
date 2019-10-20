@@ -337,4 +337,22 @@ mod tests
         assert_eq!(result.http_version, expected_result.http_version);
         assert_eq!(result.body, expected_result.body);
     }
+
+    /// Verify that the `parse_http_request()` function returns an error for invalid HTTP DELETE requests.
+    #[test]
+    fn test_parse_http_request_delete_invalid()
+    {
+        // Test that an error is raised when no path is included
+        let mut bad_head_request = "DELETE HTTP/1.1\r\n";
+        let mut result = parse_request(bad_head_request).is_err();
+        assert!(result);
+
+        bad_head_request = "DELETE / HTTP/2.0\r\n";
+        result = parse_request(bad_head_request).is_err();
+        assert!(result);
+
+        bad_head_request = "DELETE /some/path HTTP/1.1Host: www.example.com\r\n";
+        result = parse_request(bad_head_request).is_err();
+        assert!(result);
+    }
 }
