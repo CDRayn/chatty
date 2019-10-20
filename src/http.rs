@@ -355,4 +355,62 @@ mod tests
         result = parse_request(bad_head_request).is_err();
         assert!(result);
     }
+
+    /// Verify that the `parse_http_request()` function correctly parses a CONNECT HTTP request
+    /// by return an `HttpRequest` struct containing the parsed contents of the request.
+    #[test]
+    fn test_parse_http_request_connect_valid()
+    {
+        // Test the parsing of a simple CONNECT request containing no HTTP headers.
+        let mut connect_request = "CONNECT / HTTP/1.1\r\n";
+        let mut result = parse_request(connect_request).unwrap();
+        let mut expected_result = HttpRequest {
+            http_method: "CONNECT",
+            uri: Path::new("/"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a CONNECT request with a non root path.
+        connect_request = "CONNECT /some/path HTTP/1.1\r\n";
+        result = parse_request(connect_request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "CONNECT",
+            uri: Path::new("/some/path"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a CONNECT request with a non root path and HTTP headers.
+        connect_request = "CONNECT /some/path HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive\r\n";
+
+        result = parse_request(connect_request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "CONNECT",
+            uri: Path::new("/some/path"),
+            http_version: "HTTP/1.1",
+            body: None,
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+    }
 }
