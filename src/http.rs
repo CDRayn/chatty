@@ -42,10 +42,12 @@ pub fn parse_request(request: &str) -> Result<HttpRequest, Box<dyn Error>>
             // as indicated with the CRLF.
             let body_start = match request.find("\r\n")
             {
-                Some(i) => i,
+                Some(i) => i + 2,
                 None => Err("Bad request!")?,
             };
-            body = Some(&request[body_start..]);
+            // TODO: Add a check to verify that the HTTP message is terminated with \r\n
+
+            body = Some(&request[body_start .. request.len() - 2]);
         },
         // Return an error for any invalid method.
         _ => Err("Unsupported method!")?,
@@ -582,5 +584,87 @@ mod tests
         bad_request = "TRACE /some/path HTTP/1.1Host: www.example.com\r\n";
         result = parse_request(bad_request).is_err();
         assert!(result);
+    }
+
+    /// Verify that the `parse_http_request()` function correctly parses a POST HTTP request
+    /// by returning a `HttpRequest` struct containing the parsed contents of the request.
+    #[test]
+    fn test_parse_http_request_post_valid()
+    {
+        // Test the parsing of a simple POST request containing no HTTP headers.
+        let mut request = "POST / HTTP/1.1\r\n{id: 2345, message: \"Hello\"}\r\n";
+        let mut result = parse_request(request).unwrap();
+        let mut expected_result = HttpRequest {
+            http_method: "POST",
+            uri: Path::new("/"),
+            http_version: "HTTP/1.1",
+            body: Option::from("{id: 2345, message: \"Hello\"}"),
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a POST request with a more elaborate path and no HTTP headers.
+        request = "POST /messages HTTP/1.1\r\n{id: 2345, message: \"Hello\"}\r\n";
+        result = parse_request(request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "POST",
+            uri: Path::new("/messages"),
+            http_version: "HTTP/1.1",
+            body: Option::from("{id: 2345, message: \"Hello\"}"),
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+
+        // Test the parsing of a POST request containing a simple path and HTTP headers.
+        request = "POST / HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        \r\n{id: 2345, message: \"Hello\"}\r\n";
+
+        result = parse_request(request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "POST",
+            uri: Path::new("/"),
+            http_version: "HTTP/1.1",
+            body: Option::from("{id: 2345, message: \"Hello\"}"),
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
+        
+        // Test the parsing of a POST request containing a more elaborate path and HTTP headers.
+        request = "POST /messages HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        \r\n{id: 2345, message: \"Hello\"}\r\n";
+
+        result = parse_request(request).unwrap();
+        expected_result = HttpRequest {
+            http_method: "POST",
+            uri: Path::new("/messages"),
+            http_version: "HTTP/1.1",
+            body: Option::from("{id: 2345, message: \"Hello\"}"),
+        };
+
+        assert_eq!(result.http_method, expected_result.http_method);
+        assert_eq!(result.uri, expected_result.uri);
+        assert_eq!(result.http_version, expected_result.http_version);
+        assert_eq!(result.body, expected_result.body);
     }
 }
