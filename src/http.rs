@@ -41,17 +41,27 @@ pub fn parse_request(request: &str) -> Result<HttpRequest, Box<dyn Error>>
     match method
     {
         "GET" | "HEAD" | "DELETE" | "CONNECT" | "OPTIONS" | "TRACE" => (),
+        // TODO: There is probably a cleaner way to parse requests with a body.
         "POST" | "PUT" | "PATCH" => {
-            // If the request's method should have a body, find the start of the body with
+            // If the request's method should have a body, find the start of the body
             // as indicated with the CRLF.
             let body_start = match request.find("\r\n")
             {
                 Some(i) => i + 2,
                 None => Err("Bad request!")?,
             };
-            // TODO: Add a check to verify that the HTTP message is terminated with \r\n
+            let body_end = match request.rfind("\r\n")
+            {
+                Some(i) => i,
+                None => Err("Bad request!")?,
+            };
+            //  If the request only has one CRLF, then the body is empty / missing so return an error
+            if body_start >= body_end
+            {
+                return Err("Bad request!")?;
+            }
 
-            body = Some(&request[body_start .. request.len() - 2]);
+            body = Some(&request[body_start .. body_end]);
         },
         // Return an error for any invalid method.
         _ => Err("Unsupported method!")?,
