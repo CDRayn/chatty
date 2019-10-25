@@ -31,8 +31,12 @@ pub fn parse_request(request: &str) -> Result<HttpRequest, Box<dyn Error>>
     let request_line = request.lines().next().unwrap();
     let mut parts= request_line.split_whitespace();
     let method = parts.next().ok_or("Method not specified!")?;
-
     let mut body = None;
+
+    if request.ends_with("\r\n") == false
+    {
+        return Err("Bad request!")?
+    }
 
     match method
     {
@@ -496,15 +500,18 @@ mod tests
     #[test]
     fn test_parse_http_request_options_invalid()
     {
-        // Test that an error is raised when no path is included
+        // Verify that an error is raised when no path is included in the request line.
         let mut bad_request = "OPTIONS HTTP/1.1\r\n";
         let mut result = parse_request(bad_request).is_err();
         assert!(result);
 
+        // Verify that an error is raised for unsupported versions of HTTP.
         bad_request = "OPTIONS / HTTP/2.0\r\n";
         result = parse_request(bad_request).is_err();
         assert!(result);
 
+        // Verify that an error is raised if a new line is missing between the request
+        // line and the HTTP headers.
         bad_request = "OPTIONS /some/path HTTP/1.1Host: www.example.com\r\n";
         result = parse_request(bad_request).is_err();
         assert!(result);
@@ -666,5 +673,35 @@ mod tests
         assert_eq!(result.uri, expected_result.uri);
         assert_eq!(result.http_version, expected_result.http_version);
         assert_eq!(result.body, expected_result.body);
+    }
+
+    /// Verify that the `parse_http_request()` function returns an error for invalid POST HTTP requests.
+    #[test]
+    fn test_parse_http_request_post_invalid()
+    {
+        // Verify that an error is raised when no path is included
+        let mut bad_request = "POST HTTP/1.1\r\n{id: 2345, message: \"Hello\"}\r\n";
+        let mut result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        // Verify that an error is raised for unsupported versions of HTTP.
+        bad_request = "POST / HTTP/2.0\r\n{id: 2345, message: \"Hello\"}\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        bad_request = "POST / HTTP/1.0\r\n{id: 2345, message: \"Hello\"}\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        bad_request = "POST / HTTP/0.9\r\n{id: 2345, message: \"Hello\"}\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        // Verify that an error is raised if a new line is missing between the request
+        // line and the HTTP headers.
+        bad_request = "POST / HTTP/1.1Host: www.example.com
+        {id: 2345, message: \"Hello\"}\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
     }
 }
