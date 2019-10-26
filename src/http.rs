@@ -5,6 +5,7 @@ use std::error::Error;
 /// TODO: Add equality comparison implementation for struct
 pub struct HttpRequest<'a>
 {
+    // TODO: Create an enum for the HTTP methods.
     http_method: &'a str,
     uri: &'a Path,
     http_version: &'a str,
