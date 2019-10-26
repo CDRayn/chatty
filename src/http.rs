@@ -707,10 +707,47 @@ mod tests
         result = parse_request(bad_request).is_err();
         assert!(result);
 
-        // Verify that an error is raised if a new line is missing between the request
+        // Verify that an error is returned if a new line is missing between the request
         // line and the HTTP headers.
         bad_request = "POST / HTTP/1.1Host: www.example.com
         {id: 2345, message: \"Hello\"}\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        // Verify that an error is returned if the CRLF between the headers and the body is missing.
+        bad_request = "POST /messages HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        {id: 2345, message: \"Hello\"}\r\n";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        // Verify that an error is returned if the body is not terminated with CRLF.
+        bad_request = "POST /messages HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        \r\n{id: 2345, message: \"Hello\"}";
+        result = parse_request(bad_request).is_err();
+        assert!(result);
+
+        // Verify that an error is returned if the CRLF between the headers and body is missing
+        // and the body is not terminated with CRLF.
+        bad_request = "POST /messages HTTP/1.1
+        Host: www.example.com
+        User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0
+        Accept: application/json
+        Accept-Language: en-US
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        {id: 2345, message: \"Hello\"}";
         result = parse_request(bad_request).is_err();
         assert!(result);
     }
