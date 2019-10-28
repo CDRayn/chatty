@@ -1,6 +1,4 @@
 #![allow(non_snake_case)]
-use std::error::Error;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
@@ -86,5 +84,57 @@ mod test
         assert_eq!(expected.id, parsed_chat.id);
         assert_eq!(expected.participantIds[0], parsed_chat.participantIds[0]);
         assert_eq!(expected.participantIds[1], parsed_chat.participantIds[1]);
+    }
+
+    /// Verify that the `parse_chat()` returns an error when parsing an incorrectly
+    /// JSON formatted chat object.
+    #[test]
+    fn test_parse_chat_invalid()
+    {
+        // Test the parsing of a chat object that is missing the participantIds field.
+        let mut json_chat = r#"
+            {
+                "id": 34
+            }
+        "#;
+        let mut result = parse_chat(&json_chat).is_err();
+        assert!(result);
+
+        // Test the parsing of a chat object that is not valid JSON
+        json_chat = r#"
+            {
+                "id: 34,
+                "participantIds": [3423, 9813]
+            }
+        "#;
+        result = parse_chat(&json_chat).is_err();
+        assert!(result);
+
+        json_chat = r#"
+            {
+                "id": 34,
+                "participantIds": [3423, 9813],
+            }
+        "#;
+        result = parse_chat(&json_chat).is_err();
+        assert!(result);
+
+        json_chat = r#"
+            {
+                id: 34,
+                "participantIds": [3423, 9813]
+            }
+        "#;
+        result = parse_chat(&json_chat).is_err();
+        assert!(result);
+
+        json_chat = r#"
+            {
+                "id": 34,
+                participantIds: [3423, 9813]
+            }
+        "#;
+        result = parse_chat(&json_chat).is_err();
+        assert!(result);
     }
 }
