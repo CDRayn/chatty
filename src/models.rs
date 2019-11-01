@@ -1,4 +1,6 @@
 #![allow(non_snake_case)]
+use std::error::Error;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
@@ -25,20 +27,48 @@ pub struct Chat
 #[derive(Serialize, Deserialize)]
 pub struct Message<'a>
 {
-    pub sourceUserId: u32,
-    pub destinationUserId: u32,
+    #[serde(default)]
+    pub id: Option<&'a str>,
     pub timestamp: u32,
     pub message: &'a str,
+    pub sourceUserId: u32,
+    pub destinationUserId: u32,
 }
 
-/// Parses an HTTP body and returns a `Chat` struct containing the parsed contents
-/// of the HTTP body.
+/// Parses a Chat object from a request body.
+///
+/// # Parameters
+///
+/// - `http_body`: a reference to the `str` of the request body to parse a `Chat` object from.
+///
+/// # Returns
+///
+/// A `Result` which is:
+///
+/// - `Ok`: A `Chat` struct containing the chat object posted by the client.
+/// - `Err`: The error encountered when attempting to parse the request body.
 pub fn parse_chat(http_body: &str) -> Result<Chat>
 {
-
-
     let chat= serde_json::from_str(http_body);
     return chat;
+}
+
+/// Parses a Message object from a request body.
+///
+/// # Parameters
+///
+/// - `http_body`: A reference to the `str` of the request body to parse a `Message` object from.
+///
+/// # Returns
+///
+/// A `Result` which is:
+///
+/// - `Ok`: A `Message` struct containing the message object posted by the client.
+/// - `Err`: The error encountered when attempting to parse the request body.
+pub fn parse_message(http_body: &str) -> Result<Message>
+{
+    let message = serde_json::from_str(http_body);
+    return message;
 }
 
 #[cfg(test)]
@@ -136,5 +166,35 @@ mod test
         "#;
         result = parse_chat(&json_chat).is_err();
         assert!(result);
+    }
+
+    /// Verify that the `parse_message()` function correctly parses a `Message` struct from
+    /// a JSON formatted HTTP body.
+    #[test]
+    fn test_parse_message_valid()
+    {
+        let mut json_message = r#"
+            {
+                "id": "8911889c-8b93-4786-bbf3-50d56868b309",
+                "timestamp": 1572297339,
+                "message": "snake_case is more readable than CamelCase!",
+                "sourceUserId": 9837,
+                "destinationUserId": 1983
+            }
+        "#;
+        let mut expected = Message {
+            id: Some("8911889c-8b93-4786-bbf3-50d56868b309"),
+            timestamp: 1572297339,
+            message: "snake_case is more readable than CamelCase!",
+            sourceUserId: 9837,
+            destinationUserId: 1983,
+        };
+        let mut parsed_message = parse_message(&json_message).unwrap();
+
+        assert_eq!(expected.id, parsed_message.id);
+        assert_eq!(expected.timestamp, parsed_message.timestamp);
+        assert_eq!(expected.message, parsed_message.message);
+        assert_eq!(expected.sourceUserId, parsed_message.sourceUserId);
+        assert_eq!(expected.destinationUserId, parsed_message.destinationUserId);
     }
 }
